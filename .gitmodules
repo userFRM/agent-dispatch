@@ -1,0 +1,6 @@
+[submodule "vendors/voltagent"]
+	path = vendors/voltagent
+	url = https://github.com/VoltAgent/awesome-claude-code-subagents.git
+[submodule "vendors/0xfurai"]
+	path = vendors/0xfurai
+	url = https://github.com/0xfurai/claude-code-subagents.git

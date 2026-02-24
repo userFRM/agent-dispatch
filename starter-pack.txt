@@ -1,0 +1,14 @@
+# Starter pack: 10 essential agents
+# These are paths relative to vendors/voltagent/
+# The install script reads this file and copies from the submodule.
+
+categories/04-quality-security/code-reviewer.md
+categories/04-quality-security/security-auditor.md
+categories/04-quality-security/architect-reviewer.md
+categories/04-quality-security/debugger.md
+categories/04-quality-security/performance-engineer.md
+categories/04-quality-security/error-detective.md
+categories/04-quality-security/qa-expert.md
+categories/06-developer-experience/refactoring-specialist.md
+categories/06-developer-experience/documentation-engineer.md
+categories/01-core-development/api-designer.md
