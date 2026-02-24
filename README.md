@@ -17,19 +17,19 @@ Works with **Claude Code**, **OpenClaw**, **Cursor**, **Codex**, and any platfor
 ```mermaid
 flowchart TD
     A["🧑‍💻 You're coding"] --> B["Agent hits a specialized task"]
-    B --> C["🔍 Skill activates\n keyword match"]
+    B --> C["🔍 Skill activates on keyword match"]
 
-    C --> D["📖 Index lookup\nsecurity = security-auditor:quality"]
-    D --> E{"🗂️ Cached\nlocally?"}
+    C --> D["📖 Index lookup: security = security-auditor:quality"]
+    D --> E{"🗂️ Cached locally?"}
 
     E -- "✅ YES" --> G["📄 Read agent instructions"]
-    E -- "❌ NO" --> F["⬇️ Download from GitHub\ncurl → ~/.claude/agents/"]
+    E -- "❌ NO" --> F["⬇️ Download from GitHub"]
     F --> G
 
-    G --> H["🚀 Spawn Task\ninline prompt"]
-    H --> I["🔒 Work done in\nseparate context window"]
-    I --> J["📋 Results returned\nto main conversation"]
-    J --> K["💾 Agent cached\nfor next time"]
+    G --> H["🚀 Spawn Task with inline prompt"]
+    H --> I["🔒 Work done in separate context window"]
+    I --> J["📋 Results returned to main conversation"]
+    J --> K["💾 Agent cached for next time"]
 
     style A fill:#0d1117,stroke:#58a6ff,color:#c9d1d9
     style B fill:#0d1117,stroke:#58a6ff,color:#c9d1d9
