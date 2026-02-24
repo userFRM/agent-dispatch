@@ -14,25 +14,34 @@ Works with **Claude Code**, **OpenClaw**, **Cursor**, **Codex**, and any platfor
 
 ## How it works
 
-```
-You're coding → agent hits a security-related task
-                    ↓
-         Skill activates (keyword: "security")
-                    ↓
-         Index lookup: security = "security-auditor:quality"
-                    ↓
-         Is security-auditor.md cached locally?
-              ↓ NO                    ↓ YES
-         Download from GitHub    Read cached file
-              ↓                       ↓
-         Read agent instructions ←────┘
-                    ↓
-         Spawn Task with inline prompt
-                    ↓
-         Work done in separate context window
-                    ↓
-         Results returned to main conversation
-         (agent file stays cached for next time)
+```mermaid
+flowchart TD
+    A["🧑‍💻 You're coding"] --> B["Agent hits a specialized task"]
+    B --> C["🔍 Skill activates\n keyword match"]
+
+    C --> D["📖 Index lookup\nsecurity = security-auditor:quality"]
+    D --> E{"🗂️ Cached\nlocally?"}
+
+    E -- "✅ YES" --> G["📄 Read agent instructions"]
+    E -- "❌ NO" --> F["⬇️ Download from GitHub\ncurl → ~/.claude/agents/"]
+    F --> G
+
+    G --> H["🚀 Spawn Task\ninline prompt"]
+    H --> I["🔒 Work done in\nseparate context window"]
+    I --> J["📋 Results returned\nto main conversation"]
+    J --> K["💾 Agent cached\nfor next time"]
+
+    style A fill:#0d1117,stroke:#58a6ff,color:#c9d1d9
+    style B fill:#0d1117,stroke:#58a6ff,color:#c9d1d9
+    style C fill:#0d1117,stroke:#3fb950,color:#3fb950,stroke-width:2px
+    style D fill:#0d1117,stroke:#3fb950,color:#c9d1d9
+    style E fill:#161b22,stroke:#f0883e,color:#f0883e,stroke-width:2px
+    style F fill:#0d1117,stroke:#f778ba,color:#f778ba
+    style G fill:#0d1117,stroke:#3fb950,color:#c9d1d9
+    style H fill:#0d1117,stroke:#a371f7,color:#a371f7,stroke-width:2px
+    style I fill:#0d1117,stroke:#a371f7,color:#c9d1d9
+    style J fill:#0d1117,stroke:#58a6ff,color:#c9d1d9
+    style K fill:#0d1117,stroke:#3fb950,color:#3fb950
 ```
 
 ### Skills vs agents vs MCP
