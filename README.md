@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.jpg" alt="agent-dispatch banner" width="100%">
+</p>
+
 # agent-dispatch
 
 A lightweight, platform-agnostic skill that acts as an agent registry and **just-in-time router**. Instead of pre-installing 130 agents (211k tokens at startup), your AI agent carries a compact keyword index (2k tokens) and downloads specialists on demand — mid-session, the moment it needs them.
