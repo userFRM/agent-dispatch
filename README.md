@@ -1,27 +1,34 @@
 # agent-dispatch
 
-A lightweight, platform-agnostic skill that acts as an agent registry and router. Instead of doing specialized work inline (burning your main context window), your AI agent consults a compact keyword index and dispatches to the right subagent.
+A lightweight, platform-agnostic skill that acts as an agent registry and **just-in-time router**. Instead of pre-installing 130 agents (211k tokens at startup), your AI agent carries a compact keyword index (2k tokens) and downloads specialists on demand — mid-session, the moment it needs them.
 
 Works with **Claude Code**, **OpenClaw**, **Cursor**, **Codex**, and any platform that supports the SKILL.md format.
 
-**The problem:** you have 50+ subagents installed but your agent doesn't "think" to use them mid-task. Agent descriptions in the system prompt scale poorly. Full orchestrator agents are overkill — you'd spawn an agent just to pick an agent.
+**The problem:** pre-installing dozens of subagents bloats your context window. Not installing them means your agent does everything itself. Orchestrator agents are overkill — you'd spawn an agent just to pick an agent.
 
-**The solution:** a single skill file with a TOML index mapping keywords to agent names. Skills load on-demand (not at startup), cost near-zero tokens, and give your agent the routing table it needs.
+**The solution:** a single skill file with a TOML index mapping keywords to agent names and their download locations. When a specialist is needed, the skill teaches your agent to fetch it from GitHub, read its instructions, and dispatch — all in one seamless flow.
 
 ## How it works
 
 ```
 You're coding → agent hits a security-related task
                     ↓
-         Skill auto-activates (keyword: "security")
+         Skill activates (keyword: "security")
                     ↓
-         Index lookup: security = "security-auditor"
+         Index lookup: security = "security-auditor:quality"
                     ↓
-         Agent dispatches to security-auditor subagent
+         Is security-auditor.md cached locally?
+              ↓ NO                    ↓ YES
+         Download from GitHub    Read cached file
+              ↓                       ↓
+         Read agent instructions ←────┘
+                    ↓
+         Spawn Task with inline prompt
                     ↓
          Work done in separate context window
                     ↓
          Results returned to main conversation
+         (agent file stays cached for next time)
 ```
 
 ### Skills vs agents vs MCP
@@ -32,9 +39,21 @@ You're coding → agent hits a security-related task
 | **Agent** | When dispatched | Own context window (zero main impact) | Delegated specialized work |
 | **MCP** | At startup before model loads | Consumes context upfront | External tool integrations |
 
-This skill bridges the gap: it's a **skill** (lightweight, on-demand) that routes to **agents** (isolated, specialized). The SKILL.md format is part of the [AgentSkills spec](https://github.com/openclaw/clawhub/blob/main/docs/skill-format.md), portable across platforms.
+This skill bridges the gap: it's a **skill** (lightweight, on-demand) that routes to **agents** (isolated, specialized), downloading them just-in-time if they're not already installed.
 
 ## Installation
+
+### Recommended: skill only (JIT mode)
+
+Install just the dispatch skill — agents download automatically when needed:
+
+```bash
+git clone https://github.com/userFRM/agent-dispatch.git
+cd agent-dispatch
+./scripts/install.sh --skill-only
+```
+
+This installs only the dispatch skill (~2k tokens). Agents are fetched from GitHub on demand during your session and cached locally for future use.
 
 ### OpenClaw (via ClawHub)
 
@@ -42,7 +61,7 @@ This skill bridges the gap: it's a **skill** (lightweight, on-demand) that route
 clawhub install agent-dispatch
 ```
 
-### Claude Code
+### Full install (skill + starter pack)
 
 ```bash
 git clone --recurse-submodules https://github.com/userFRM/agent-dispatch.git
@@ -50,17 +69,7 @@ cd agent-dispatch
 ./scripts/install.sh
 ```
 
-This installs:
-- The dispatch skill to `~/.claude/skills/agent-dispatch/`
-- 10 starter agents from the VoltAgent submodule to `~/.claude/agents/`
-
-No files are duplicated — the starter pack is a manifest (`starter-pack.txt`) pointing to files in `vendors/voltagent/`.
-
-### Skill only (no agents)
-
-```bash
-./scripts/install.sh --skill-only
-```
+This installs the skill plus 10 pre-cached starter agents from the VoltAgent submodule.
 
 ### Manual (any platform)
 
@@ -74,17 +83,9 @@ Copy `skills/agent-dispatch/SKILL.md` to your platform's skill directory:
 
 ## Getting agents
 
-Agents live in `~/.claude/agents/` as `.md` files. Three ways to get them there:
+With JIT mode (default), agents download automatically when needed. You can also pre-install them:
 
-### Option 1: Starter pack (via submodule)
-
-The install script reads `starter-pack.txt` and copies 10 essential agents from the VoltAgent submodule:
-
-code-reviewer, security-auditor, architect-reviewer, debugger, performance-engineer, error-detective, qa-expert, refactoring-specialist, documentation-engineer, api-designer
-
-Edit `starter-pack.txt` to add or remove agents from the starter set.
-
-### Option 2: Fetch from GitHub by category
+### Fetch from GitHub by category
 
 ```bash
 # List available categories
@@ -93,6 +94,9 @@ Edit `starter-pack.txt` to add or remove agents from the starter set.
 # Fetch specific categories
 ./scripts/fetch-agents.sh --category quality
 ./scripts/fetch-agents.sh --category infra
+
+# Fetch a single agent
+./scripts/fetch-agents.sh --single debugger:quality
 
 # Fetch all 130 agents from VoltAgent
 ./scripts/fetch-agents.sh --all
@@ -116,21 +120,18 @@ Available categories:
 | Meta orchestration | `meta` | 10 | multi-agent-coordinator |
 | Research and analysis | `research` | 6 | research-analyst, competitive-analyst |
 
-### Option 3: Git submodules (pinned versions)
-
-The full source repos are embedded as submodules under `vendors/`. Copy what you need:
+### Git submodules (pinned versions)
 
 ```bash
 git submodule update --init
 cp vendors/voltagent/categories/04-quality-security/*.md ~/.claude/agents/
-cp vendors/0xfurai/agents/python-expert.md ~/.claude/agents/
 ```
 
 ## Usage
 
 ### Automatic (recommended)
 
-Once installed, Claude auto-consults the dispatch index when it encounters specialized tasks. No action needed.
+Once installed, Claude auto-consults the dispatch index when it encounters specialized tasks. If the agent isn't cached locally, it downloads it from GitHub, reads its instructions, and dispatches — all transparently. No action needed.
 
 ### Manual
 
@@ -141,7 +142,8 @@ Once installed, Claude auto-consults the dispatch index when it encounters speci
 ### Regenerate index from your agents
 
 ```bash
-./scripts/generate-index.sh
+./scripts/generate-index.sh              # Print to stdout
+./scripts/generate-index.sh --install    # Update SKILL.md in-place
 ```
 
 ## Dispatch decision logic
@@ -154,7 +156,7 @@ The skill instructs Claude to **dispatch** when:
 And to **do it inline** when:
 - The task is a quick one-liner
 - Tight back-and-forth with the user is needed
-- No matching agent is installed
+- The user explicitly asks to handle it directly
 
 ## Uninstall
 
@@ -186,20 +188,22 @@ SKILL_FILE=~/.openclaw/skills/agent-dispatch/SKILL.md ./scripts/generate-index.s
 
 ## Known limitations
 
-- Each keyword maps to exactly one agent (TOML requires unique keys). If you need one keyword to fan out to multiple agents, use a composite agent or pick the most relevant one.
-- ZIP downloads from GitHub don't include submodules. Clone with `--recurse-submodules` or use the fetch script instead.
+- Each keyword maps to exactly one agent (TOML requires unique keys)
+- Downloaded agents are cached permanently — delete the `.md` file to force re-download
+- If you are offline, agents not already cached will be unavailable (the agent handles the task itself)
+- ZIP downloads from GitHub don't include submodules — clone with `--recurse-submodules` or use the fetch script
 
 ## Customization
 
 Edit `~/.claude/skills/agent-dispatch/SKILL.md` to:
 - **Add keywords** for your specific workflows
-- **Remove agents** you don't have installed
+- **Remove agents** you don't need
 - **Add categories** for your domain
 
-The index format is simple TOML:
+The index format is TOML with category suffixes:
 
 ```toml
-keyword = "agent-name"
+keyword = "agent-name:category"
 ```
 
 ## Works with

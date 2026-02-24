@@ -210,6 +210,27 @@ case "${1:-}" in
     echo "Agents installed to: $AGENTS_DIR"
     ;;
 
+  --single|-s)
+    if [[ -z "${2:-}" ]]; then
+      echo "Error: Specify agent-name:category (e.g. debugger:quality)" >&2
+      exit 1
+    fi
+    IFS=':' read -r agent_name category_key <<< "$2"
+    if [[ -z "$agent_name" || -z "$category_key" ]]; then
+      echo "Error: Format must be agent-name:category (e.g. debugger:quality)" >&2
+      exit 1
+    fi
+    if [[ -z "${CATEGORIES[$category_key]+x}" ]]; then
+      echo "Error: Unknown category '$category_key'. Use --list to see available categories." >&2
+      exit 1
+    fi
+    print_header
+    echo ""
+    download_agent "$category_key" "$agent_name"
+    echo ""
+    echo "Agent installed to: $AGENTS_DIR"
+    ;;
+
   --source)
     if [[ "${2:-}" == "0xfurai" ]]; then
       print_header
@@ -229,6 +250,7 @@ case "${1:-}" in
     echo "  ./scripts/fetch-agents.sh --list              List categories"
     echo "  ./scripts/fetch-agents.sh --all               Download all 130 agents"
     echo "  ./scripts/fetch-agents.sh --category <name>   Download one category"
+    echo "  ./scripts/fetch-agents.sh --single <n:cat>    Download one agent (e.g. debugger:quality)"
     echo "  ./scripts/fetch-agents.sh --source 0xfurai    Fetch from alternate repo"
     echo ""
     echo "Agents are installed to: $AGENTS_DIR"

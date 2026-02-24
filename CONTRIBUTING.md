@@ -24,8 +24,10 @@ The fetch and generate scripts can always be improved. PRs welcome.
 
 1. Keep the SKILL.md body under 200 lines — the whole point is to stay lightweight
 2. Test that the skill loads correctly in Claude Code before submitting
-3. Use the existing TOML format for index entries
+3. Use the v2 TOML format for index entries: `keyword = "agent-name:category"`
 4. One keyword per line, grouped by category with comment headers
+5a. The `:category` suffix must match a key in the category directory mapping (core, languages, infra, quality, data, devex, domains, business, meta, research)
+5b. For custom/local agents not in VoltAgent, use `:local`
 5. Use sentence case for all headings (not title case)
 6. Don't duplicate agent files — reference submodules or upstream repos
 
